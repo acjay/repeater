@@ -1,0 +1,24 @@
+{
+  "author": "Alan Johnson",
+  "name": "retryPromise",
+  "description": "retries a $.ajax-style function a given number of times",
+  "version": "1.0.0",
+  "homepage": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "engines": {
+    "node": "~0.6.10 || 0.8 || 0.9"
+  },
+  "scripts": {
+    "start": "./node_modules/.bin/brunch watch -p 8080 --server",
+    "test": "./node_modules/.bin/brunch test"
+  },
+  "dependencies": {
+    "mocha": "",
+    "expect.js": "",
+    "require": "",
+    "when": ""
+  }
+}
