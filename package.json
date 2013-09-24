@@ -1,6 +1,6 @@
 {
   "author": "Alan Johnson",
-  "name": "retryPromise",
+  "name": "retry-promise",
   "description": "retries a $.ajax-style function a given number of times",
   "version": "1.0.0",
   "homepage": "",
