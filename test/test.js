@@ -223,6 +223,7 @@ describe('Retry Promise', function () {
 					done();
 				}, done);
 			});
+
 			it('should call func 3 times', function (done) {
 				var asyncFunc = retryPromise(maxAttempts, testFuncFactory(successAttempt));
 				testAsync(asyncFunc, function (val) {
@@ -232,7 +233,23 @@ describe('Retry Promise', function () {
 					expect(err).to.be(3);
 					done();
 				}, done);
-			});	
+			});
+
+			describe('and provideAllErrors is set', function () {
+				it('all errors should be provided', function (done) {
+					var options = { provideAllErrors: true },
+						asyncFunc = retryPromise(maxAttempts, testFuncFactory(successAttempt));
+					testAsync(asyncFunc, function (val) {
+						expect.fail('promise was incorrectly resolved');
+					}, function (err) {
+						var errIndex;
+						for (errIndex = 0; errIndex < err.length; errIndex++) {
+							expect(err[errIndex]).to.be(errIndex + 1);
+						}
+						done();
+					}, done);
+				});				
+			});
 
 			describe('and beforeRetry throws exceptions', function () {
 				it('should reject with beforeRetry\'s rejction error', function (done) {
