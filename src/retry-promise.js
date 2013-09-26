@@ -10,20 +10,18 @@
 	  *
 	  * Return a function that, when called, stores the arguments to func, 
 	  * sets up the retry sequence, and returns a promise on the final
-	  * result
+	  * result.
 	  *
 	  * @param maxAttempts the maximum number of times to try func. Can be a 
 	  *     function or method on the same object, but it will only be called
 	  *     once per call of the decorated function.
 	  * @param func the function to try
 	  * @param options object containing optional parameters:
-	  *     successPredicate: function taking the value promised by func and
-	  *         returning true if the operation was truly successful. If either
-	  *         false is returned or an exception is thrown, the attempt will
-	  *         be considered a failure, and handled accordingly.
 	  *     beforeRetry: function taking the value promised by func to be 
 	  *         called between retries. Could be used for logging, delaying, 
-	  *         updating UI, etc.
+	  *         updating UI, etc. If an exception is thrown by beforeRetry, the
+	  *         rejection handler will itself reject instead of retrying the 
+	  *         func, and will proceed on to the next attempt or final failure.
 	  *     provideAllErrors: if set to truthy, if all attempts are exhausted
 	  *         without success, all rejection values are returned in an array.
 	  *         Default behavior is to return only the last.
@@ -52,13 +50,11 @@
 
 			// Queue up handlers for retries
 			for (tryNumber = 2; tryNumber <= tries; tryNumber++) {
-				// Success filter could trigger failures, so split into 
-				// continuation into two phases
-				chain = chain.then(retrySuccessFilter).then(null, retryFailureFilter);
+				chain = chain.then(null, retryFailureFilter);
 			}
 
 			// Add handler for final failure
-			chain = chain.then(retrySuccessFilter).then(null, finalRejctionFilter);
+			chain = chain.then(null, finalRejctionFilter);
 
 			if (typeof options.beforeResolve === 'function' || typeof options.beforeReject === 'function') {
 				chain = chain.then(function (val) {
@@ -79,26 +75,18 @@
 				}
 			}
 
-			function retrySuccessFilter(val) {
-				// func() succeeded, but the response might be a failure
-				if (succeeded || typeof options.successPredicate !== 'function' || options.successPredicate.call(_this, val)) {
-					succeeded = true;
-					return val;
-				} else {
-					throw val;
-				}
-			}
-
-			function retryFailureFilter(val) {
+			function retryFailureFilter(err) {
 				var nextAttempt = null;
 
 				// Store the reject() arguments
-				errorLog.push(val);
+				errorLog.push(err);
 
 				if (typeof options.beforeRetry === 'function') {
-					nextAttempt = when(options.beforeRetry.call(_this, val)).then(promiseFunc);
+					// If beforeRetry throws an exception, the rejection 
+					// will reject instead of calling the function.
+					nextAttempt = when(options.beforeRetry.call(_this, err)).then(promiseFunc);
 				} else {
-					nextAttempt = promiseFunc.call(_this);
+					nextAttempt = promiseFunc();
 				}
 
 				// Forward the promise of the next attempt
