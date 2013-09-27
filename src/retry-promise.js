@@ -56,12 +56,9 @@
 			// Add handler for final failure
 			chain = chain.then(null, finalRejctionFilter);
 
-			if (typeof options.beforeResolve === 'function' || typeof options.beforeReject === 'function') {
-				chain = chain.then(function (val) {
-					return options.beforeResolve.call(_this, val);
-				}, function (err) {
-					return options.beforeReject.call(_this, err);
-				});
+			// Optionally, add handlers for beforeResolve and/or beforeReject
+			if (options.beforeResolve || options.beforeReject) {
+				chain = chain.then(funcOrNull(options.beforeResolve), funcOrNull(options.beforeReject));
 			}
 
 			return chain;
@@ -81,10 +78,10 @@
 				// Store the reject() arguments
 				errorLog.push(err);
 
-				if (typeof options.beforeRetry === 'function') {
+				if (options.beforeRetry) {
 					// If beforeRetry throws an exception, the rejection 
 					// will reject instead of calling the function.
-					nextAttempt = when(options.beforeRetry.call(_this, err)).then(promiseFunc);
+					nextAttempt = when(callIfFunc(options.beforeRetry, err)).then(promiseFunc);
 				} else {
 					nextAttempt = promiseFunc();
 				}
@@ -102,6 +99,14 @@
 				} else {
 					throw errorLog[errorLog.length - 1];
 				}
+			}
+
+			function callIfFunc(f) {
+				return typeof f === 'function' ? f.apply(_this, Array.prototype.slice(arguments, 1)) : f;
+			}
+
+			function funcOrNull(f) {
+				return typeof f === 'function' ? function () { return f.apply(_this, arguments); } : null;
 			}
 		};
 	};

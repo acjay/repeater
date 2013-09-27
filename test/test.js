@@ -37,7 +37,7 @@ describe('Retry Promise', function () {
 				}, function (err) {
 					expect(err).to.be(1);
 					done();
-				});
+				}, done);
 			});
 
 			it('should resolve when func\'s promise is resolved', function (done) {
@@ -45,7 +45,7 @@ describe('Retry Promise', function () {
 				testAsync(asyncFunc, function () {
 					done();
 				}, function () {
-					expect().fail('promise was not resolved');
+					throw new Error('promise was not resolved');
 				}, done);
 			});
 
@@ -82,20 +82,20 @@ describe('Retry Promise', function () {
 			it('should reject when func\'s promise is rejected', function (done) {
 				var asyncFunc = retryPromise(maxAttempts, testFuncFactory(successAttempt));
 				testAsync(asyncFunc, function () { 
-					expect().fail('promise was not rejected');
+					throw new Error('promise was not rejected');
 				}, function () {
 					done();
 				}, done);
 			});
 
-			it('should call beforeReject when func\'s promise is resolved', function (done) {
+			it('should call beforeReject when func\'s promise is rejected', function (done) {
 				var options = { beforeReject: function () { done(); }};
 					asyncFunc = retryPromise(maxAttempts, testFuncFactory(successAttempt), options);
 				testAsync(asyncFunc, null, null, done);
 			});
 
 			it('should resolve if beforeReject resolves', function (done) {
-				var resolutionValue = 'test',
+				var resolutionValue = {},
 					options = { beforeReject: function () { return resolutionValue }};
 					asyncFunc = retryPromise(maxAttempts, testFuncFactory(successAttempt), options);
 				testAsync(asyncFunc, function (val) { 
@@ -105,13 +105,26 @@ describe('Retry Promise', function () {
 			});
 
 			it('should reject with beforeRejects\'s rejection value', function (done) {
-				var rejectionValue = 'test',
+				var rejectionValue = {},
 					options = { beforeReject: function () { throw rejectionValue }};
 					asyncFunc = retryPromise(maxAttempts, testFuncFactory(successAttempt), options);
 				testAsync(asyncFunc, null, function (err) { 
 					expect(err).to.be(rejectionValue); 
 					done(); 
 				}, done);
+			});
+
+			describe('with beforeResolve but not beforeReject', function () {
+				it('should reject normally', function (done) {
+					var options = { beforeResolve: function () {} },
+						asyncFunc = retryPromise(maxAttempts, testFuncFactory(successAttempt), options);
+					testAsync(asyncFunc, function () { 
+						throw new Error('promise was not rejected');
+					}, function (err) {
+						expect(err).to.be(1);
+						done();
+					}, done);
+				});
 			});
 		});
 	});
@@ -152,14 +165,14 @@ describe('Retry Promise', function () {
 
 		it('should call func in its original context', function (done) {
 			var testObj = {
-					prop: 'test_value',
+					prop: {},
 					asyncFunc: retryPromise(maxAttempts, function () { return this.prop; })
 				};
 			testObj.asyncFunc().then(function (val) {
 				expect(val).to.be(testObj.prop);
 				done();
 			}, function (err) {
-				expect().fail(err);
+				throw new Error(err);
 			}).then(null, done);
 		});
 		
@@ -177,7 +190,7 @@ describe('Retry Promise', function () {
 					})
 				};
 			testObj.asyncFunc().then(function (val) {
-				expect().fail('promise should never be resolved');
+				throw new Error('promise should never be resolved');
 			}, function (err) {
 				expect(flag);
 				done();
@@ -196,7 +209,7 @@ describe('Retry Promise', function () {
 				testAsync(asyncFunc, function () {
 					done();
 				}, function () {
-					expect().fail('promise was not resolved');
+					throw new Error('promise was not resolved');
 				}, done);
 			});
 
@@ -218,7 +231,7 @@ describe('Retry Promise', function () {
 			it('should reject', function (done) {
 				var asyncFunc = retryPromise(maxAttempts, testFuncFactory(successAttempt));
 				testAsync(asyncFunc, function () {
-					expect().fail('promise was incorrectly resolved');
+					throw new Error('promise was incorrectly resolved');
 				}, function () {
 					done();
 				}, done);
@@ -257,7 +270,7 @@ describe('Retry Promise', function () {
 						options = { beforeRetry: function () { throw errVal; } };
 						asyncFunc = retryPromise(maxAttempts, testFuncFactory(successAttempt), options);
 					testAsync(asyncFunc, function (val) {
-						expect().fail('promise was incorreclty resolved');
+						throw new Error('promise was incorreclty resolved');
 					}, function (err) {
 						expect(err).to.be(errVal);
 						done();
@@ -274,7 +287,7 @@ describe('Retry Promise', function () {
 				testAsync(asyncFunc, function () {
 					done();
 				}, function () {
-					expect().fail('promise was incorrectly rejected');
+					throw new Error('promise was incorrectly rejected');
 				}, done);
 			});
 
