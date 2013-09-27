@@ -300,7 +300,7 @@ describe('Delay', function () {
 			callback = function (arg) { flag = true; }, 
 			delayed = retryPromise.delay(delay, callback);
 
-		delayed().then(function () {
+		delayed.then(function () {
 			expect(flag);
 			done();
 		}, function () {
@@ -312,7 +312,7 @@ describe('Delay', function () {
 		var callback = function (arg) { throw {}; },
 			delayed = retryPromise.delay(delay, callback);
 
-		delayed().then(function () {
+		delayed.then(function () {
 			expect.fail('delay promise should not be resolved');
 		}, function () {
 			done();

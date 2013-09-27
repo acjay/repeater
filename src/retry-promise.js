@@ -107,30 +107,28 @@
 	};
 
 	/**
-	  * Promise compliant delay function. Can be used as a beforeRetry callback
-	  * to space out attempts of a retryPromise-wrapped task.
+	  * Promise compliant delay function. Can be wrapped in a function and used 
+	  * as a beforeRetry callback to space out attempts of a 
+	  * retryPromise-wrapped task.
 	  * 
 	  * @param ms the number of milliseconds to delay
 	  * @param an optional function to call after the delay
-	  * @return a function that, when called, returns a promise that is 
-	  *     resolved after a delay
+	  * @return a promise that is resolved after a delay
 	  */
 	env.retryPromise.delay = function (ms, func) {
-		return function () {
-			return when.promise(function (resolve, reject) {
-				setTimeout(function () {
-					if (typeof func === 'function') {
-						try {
-							when(func.apply(null)).then(resolve, reject);	
-						} catch (err) {
-							reject(err);
-						}
-					} else {
-						resolve();
+		return when.promise(function (resolve, reject) {
+			setTimeout(function () {
+				if (typeof func === 'function') {
+					try {
+						when(func.apply(null)).then(resolve, reject);	
+					} catch (err) {
+						reject(err);
 					}
-				}, ms);
-			});
-		};
+				} else {
+					resolve();
+				}
+			}, ms);
+		});
 	};
 
 	if (typeof module !== 'undefined') {
