@@ -63,6 +63,8 @@ describe('Repeater', function () {
 			state.shouldResolve = true;
 		});
 
+		describe('and only attempt provided', function () {});
+
 		it('should call before once', util.assertCalled(getState, 'before', 1));
 		it('should call attempt twice', util.assertCalled(getState, 'attempt', 2));
 		it('should call validate once', util.assertCalled(getState, 'validate', 1));

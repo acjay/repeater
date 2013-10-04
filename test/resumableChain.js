@@ -22,7 +22,7 @@ describe('Resumable Chain', function () {
 		it('should call the first function once', util.assertCalled(getState, 'first', 1));
 		it('should call the second function once', util.assertCalled(getState, 'second', 1));
 		it('should call the third function once', util.assertCalled(getState, 'third', 1));
-		it('should not call onError', util.assertCalled(getState, 'onError', 0);
+		it('should not call onError', util.assertCalled(getState, 'onError', 0));
 	});
 
 	describe('with two successful functions and one that rejects twice and then resolves', function () {

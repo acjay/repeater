@@ -32,7 +32,8 @@
 				onSuccess = funcOrNull.call(hostObj, options.onSuccess),
 				onError = funcOrNull.call(hostObj, options.onError),
 				lastly = funcOrNull.call(hostObj, options.lastly),
-				attempt = null, 
+				attempt = null,
+				decorated = null, 
 				chain = null;
 
 			// If a validator is provided, tack it on as a promise handler on the
@@ -41,10 +42,12 @@
 				attempt = function () {
 					return when(options.attempt.apply(hostObj, arguments)).then(validate);
 				}
+			} else {
+				attempt = options.attempt;
 			}
 
 			// Get the retry-wrapped function
-			var decorated = env.repeater.retry.call(hostObj, options.maxAttempts, attempt, options);
+			decorated = env.repeater.retry.call(hostObj, options.maxAttempts, attempt, options);
 
 			if (before) {
 				chain = when(before.apply(hostObj, arguments)).then(decorated);
