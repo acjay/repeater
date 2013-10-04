@@ -16,9 +16,13 @@
   <script src="node_modules/mocha/mocha.js"></script>
   <script src="node_modules/expect.js/expect.js"></script>
   <script src="node_modules/when/when.js"></script>
-  <script src="src/retry-promise.js"></script>
+  <script src="src/repeater.js"></script>
+  <script src="test/util.js"></script>
   <script>mocha.setup('bdd')</script>
-  <script src="test/test.js"></script>
+  <script src="test/retry.js"></script>
+  <script src="test/repeater.js"></script>
+  <script src="test/delay.js"></script>
+  <script src="test/resumableChain.js"></script>
   <script>
     mocha.checkLeaks();
     mocha.globals(['when']);
