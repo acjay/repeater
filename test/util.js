@@ -5,7 +5,7 @@ var expect = this.expect || require('../node_modules/expect.js/expect.js');
 		testAsync: function (func, onResolve, onReject, doneCallback, ensureCallback) {
 			func().then(onResolve, onReject).then(null, doneCallback).ensure(ensureCallback);
 		},
-		testFuncFactory: function (triesToSucceed) {
+		testFuncFactory: function (triesToSucceed, name) {
 			// Create a bunch of test funcs that track the number of times they are
 			// called, and reject a specified number of times before resolving
 			if (triesToSucceed == null) return null;
@@ -13,6 +13,7 @@ var expect = this.expect || require('../node_modules/expect.js/expect.js');
 			var attempter = function () {
 				attempter.args.push(Array.prototype.slice(arguments, 0));
 				attempter.attempt += 1;
+				if (name) console.log('Running ' + name + ' ' + attempter.attempt);
 				if (attempter.attempt >= triesToSucceed && triesToSucceed > 0) {
 					return attempter.attempt;
 				} else {
@@ -23,14 +24,14 @@ var expect = this.expect || require('../node_modules/expect.js/expect.js');
 			attempter.args = [];
 			return attempter;
 		},
-		optionsMethodFactory: function (triesDict) {
+		optionsMethodFactory: function (triesDict, log) {
 			// Create a bunch of test funcs to to serve as callbacks for repeater, to
 			// confirm that callbacks are called under the presumed conditions
 			var obj = {},
 				prop;
 
 			for (prop in triesDict) {
-				obj[prop] = env.util.testFuncFactory(triesDict[prop]);
+				obj[prop] = env.util.testFuncFactory(triesDict[prop], log ? prop : null);
 			}
 
 			return obj;

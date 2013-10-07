@@ -5,6 +5,9 @@ var repeater = this.repeater || require('../src/repeater'),
 	util = this.util || require('./util.js');
 
 describe('Repeater', function () {
+	it('should call call attempt with the provided arguments');
+	it('should call work with only attempt provided');
+
 	describe('with one resolving attempt', function () {
 		var state,
 			getState = function () { return state; };
@@ -13,7 +16,7 @@ describe('Repeater', function () {
 			state = {};
 			state.options = util.optionsMethodFactory({ 
 				before: 1, attempt: 1, validate: 1, beforeRetry: 1, onSuccess: 1, onError: 1, lastly: 1 
-			});
+			}, true);
 			state.asyncFunc = repeater(state.options);
 			state.shouldResolve = true;
 		});
@@ -35,7 +38,7 @@ describe('Repeater', function () {
 			state = {};
 			state.options = util.optionsMethodFactory({ 
 				before: 1, attempt: 2, validate: 1, beforeRetry: 1, onSuccess: 1, onError: 2, lastly: 1 
-			});
+			}, true);
 			state.asyncFunc = repeater(state.options);
 			state.shouldResolve = false;
 		});
@@ -62,8 +65,6 @@ describe('Repeater', function () {
 			state.asyncFunc = repeater(state.options);
 			state.shouldResolve = true;
 		});
-
-		describe('and only attempt provided', function () {});
 
 		it('should call before once', util.assertCalled(getState, 'before', 1));
 		it('should call attempt twice', util.assertCalled(getState, 'attempt', 2));

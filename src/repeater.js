@@ -1,3 +1,16 @@
+// Testing TODOs:
+// - test extensively for missing optional parameters
+// - test resumable without initial arg
+// - test for correct context in callbacks
+// - test that makePipeline is called with initial args
+// - test that makePipeline passes intermediate results
+//
+// Other TODOs:
+// - replace `context` variable in resumable? Could just be called
+//   using `call` 
+// - get rid of options object for `repeater.retry`?
+
+
 (function (env) {
 	'use strict';
 
@@ -23,47 +36,31 @@
 	  *             exhausted and the function hasn't succeeded.
 	  *         lastly: (optional) function to execute on success or failure.
 	  *     }
+	  * @return an automatically retrying function/method
 	  */
 	env.repeater = function(options) {
 		return function () {
-			var hostObj = this,
-				before = funcOrNull.call(hostObj, options.before),
-				validate = funcOrNull.call(hostObj, options.validate),
-				onSuccess = funcOrNull.call(hostObj, options.onSuccess),
-				onError = funcOrNull.call(hostObj, options.onError),
-				lastly = funcOrNull.call(hostObj, options.lastly),
-				attempt = null,
-				decorated = null, 
-				chain = null;
+			var before = funcOrNull.call(this, options.before),
+				attempt = funcOrNull.call(this, options.attempt),
+				validate = funcOrNull.call(this, options.validate),
+				onSuccess = funcOrNull.call(this, options.onSuccess),
+				onError = funcOrNull.call(this, options.onError),
+				lastly = funcOrNull.call(this, options.lastly),
+				retrySeq = null,
+				decoratedRetrySeq = null,
+				mainSeq = null;
 
-			// If a validator is provided, tack it on as a promise handler on the
-			// attempt function.
-			if (validate) {
-				attempt = function () {
-					return when(options.attempt.apply(hostObj, arguments)).then(validate);
-				}
-			} else {
-				attempt = options.attempt;
-			}
-
-			// Get the retry-wrapped function
-			decorated = env.repeater.retry.call(hostObj, options.maxAttempts, attempt, options);
-
-			if (before) {
-				chain = when(before.apply(hostObj, arguments)).then(decorated);
-			} else {
-				chain = decorated(arguments);
-			}
-			chain = chain.then(funcOrNull.call(hostObj, onSuccess), funcOrNull.call(hostObj, onError));
-			chain = chain.ensure(lastly);
-			return chain;
+			retrySeq = makePipeline.call(this, [attempt, validate]);
+			decoratedRetrySeq = env.repeater.retry.call(this, options.maxAttempts, retrySeq, options);
+			mainSeq = makePipeline.call(this, [before, decoratedRetrySeq]);
+			return mainSeq.apply(this, arguments).then(onSuccess, onError).ensure(lastly);
 		}
 	}
 
 	/**
 	  * Function/method decorator for automatically retrying (a)synchronous
 	  * functions a given number of times. All optional function arguments are
-	  * executed within the context the decorator is called.
+      * executed within the context the decorator is called.
 	  *
 	  * Return a function that, when called, stores the arguments to func, 
 	  * sets up the retry sequence, and returns a promise on the final
@@ -74,25 +71,26 @@
 	  *     once per call of the decorated function.
 	  * @param func the function to try
 	  * @param options object containing optional parameters:
-	  *     beforeRetry: function taking the value promised by func to be 
-	  *         called between retries. Could be used for logging, delaying, 
-	  *         updating UI, etc. If an exception is thrown by beforeRetry, the
-	  *         rejection handler will itself reject instead of retrying the 
-	  *         func, and will proceed on to the next attempt or final failure.
-	  *     provideAllErrors: if set to truthy, if all attempts are exhausted
-	  *         without success, all rejection values are returned in an array.
-	  *         Default behavior is to return only the last.
+	  *     {
+	  *         beforeRetry: function taking the value promised by func to be 
+	  *             called between retries. Could be used for logging, 
+	  *	            delaying, updating UI, etc. If an exception is thrown, the
+	  *             rejection handler will itself reject instead of retrying 
+	  *             the func, and will proceed to the next attempt or final 
+	  *             failure.
+	  *         provideAllErrors: if set to truthy, if all attempts are 
+	  *             exhausted without success, all rejection values are 
+	  *             returned in an array. Default behavior is to return only 
+	  *             the last rejection value.
+	  *     }
 	  * @return the decorated version of func
 	  */
 	env.repeater.retry = function(maxAttempts, func, options) {
 		options = options || {};
 
-		if (typeof options.maxAttempts !== 'number' || typeof options.maxAttempts !== 'function') {
-			options.maxAttempts = 1;
-		}
-
 		return function () {
 			var hostObj = this, // context of func if it's a method
+				beforeRetry = funcOrNull.call(hostObj, options.beforeRetry),
 				funcArgs = arguments,
 				chain = null,
 				errorLog = [], 
@@ -114,7 +112,7 @@
 			return chain;
 
 			function promiseFunc() {
-				// Turn func into a promise, even if it's synchronous
+				// Wrap func in a promise, even if it's synchronous
 				try {
 					return when(func.apply(hostObj, funcArgs));
 				} catch (err) {
@@ -123,21 +121,12 @@
 			}
 
 			function retryFailureFilter(err) {
-				var nextAttempt = null;
-
 				// Store the reject() arguments
 				errorLog.push(err);
 
-				if (options.beforeRetry) {
-					// If beforeRetry throws an exception, the rejection 
-					// will reject instead of calling the function.
-					nextAttempt = when(callIfFunc.call(hostObj, options.beforeRetry, err)).then(promiseFunc);
-				} else {
-					nextAttempt = promiseFunc();
-				}
-
-				// Forward the promise of the next attempt
-				return nextAttempt;
+				// Resolve with the result of the retry
+				// (promiseFunc ignores err if beforeRetry is not provided)
+				return makePipeline.call(hostObj, [beforeRetry, promiseFunc])(err);
 			}
 
 			function finalRejctionFilter(val) {
@@ -178,6 +167,23 @@
 		});
 	};
 
+	/**
+	  * Creates a resumable chain of possibly asynchronous functions. When the 
+	  * result is called, the functions are executed in order, with 
+	  * intermediate results passed down the line. If one of the functions 
+	  * rejects or throws an exception, the process halts. If the same object 
+	  * is called again, the sequence resumes from the failed function on. The 
+	  * argument for the failed function is automatically remembered.
+	  *
+	  * @param context the `this` context for the functions
+	  * @param funcs an array of functions to call
+	  * @param optional parameters
+	  *     {
+	  *         initialArg: (optional) argument for first function
+	  *         onError: (optional) rejection filter if a function fails
+	  *     }
+	  * @return a function that starts/resumes the sequence, when called
+	  */
 	env.repeater.resumable = function (context, funcs, options) {
 		// Start at the begining of the chain
 		var progress = 0,
@@ -202,12 +208,11 @@
 				}, lastResult)
 
 			// Attach error handler
-			chain = chain.otherwise(options.onError);
+			chain = chain.otherwise(funcOrNull.call(context, options.onError));
 
 			return chain;
 		};
 	};
-
 
 	function funcOrNull(f) {
 		var _this = this;
@@ -216,6 +221,30 @@
 
 	function callIfFunc(f) {
 		return typeof f === 'function' ? f.apply(this, Array.prototype.slice(arguments, 1)) : f;
+	}
+
+	function makePipeline(ops) {
+		var hostObj = this;
+
+		// Returned function calls a series of functions, feeding the
+		// arguments to the first, and intermediate results to the 
+		// subsequent functions
+		return function () {
+			var firstOp = true,
+				initialArgs = arguments;
+			return when.reduce(ops, function (prevResult, nextOp, index) {
+				if (nextOp) {
+					if (firstOp) {
+						firstOp = false;
+						return nextOp.apply(hostObj, initialArgs);
+					} else {
+						return nextOp.call(hostObj, prevResult);
+					}	
+				} else {
+					return prevResult;
+				}
+			}, {});	// Need to feed reduce an initial dummy value
+		}			
 	}
 
 	if (typeof module !== 'undefined') {

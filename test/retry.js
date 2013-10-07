@@ -66,7 +66,7 @@ describe('Retry', function () {
 		describe('using repeater.retry.delay', function () {
 			it('should delay, then resolve', function (done) {
 				var nominalDelay = 50,
-					options = { beforeRetry: repeater.delay(nominalDelay) },
+					options = { beforeRetry: function () { repeater.delay(nominalDelay); } },
 					asyncFunc = repeater.retry(maxAttempts, util.testFuncFactory(successAttempt), options),
 					startTime = +new Date();
 				util.testAsync(asyncFunc, function () {
