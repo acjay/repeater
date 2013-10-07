@@ -1,12 +1,12 @@
 repeater
 ========
 
-Repeater is a set of libraries for error recovery, building off of the [when.js](https://github.com/cujojs/when) library for promises. The overall goal is to provide an engine for running sequences of asynchronous tasks, retrying them automatically when they fail, and resuming failed processes without repeating successful work. Ideally, the result is more modular and declarative code, fewer explicit promises.
+Repeater is a combinator library for error recovery, building off of the [when.js](https://github.com/cujojs/when) library for promises. The overall goal is to provide an engine for running sequences of asynchronous tasks, retrying them automatically when they fail, and resuming failed processes without repeating successful work. Ideally, the result is more modular and declarative code, fewer explicit promises.
 
 repeater
 --------
 
-The bare repeater function takes a number of optional callbacks to encapsulate the a retryable process in one flat object, for a readable, declarative flow. The only required parameters below are `attempt`, the core code to be tried and retried, and `maxAttempts`, which determine the number of retries for `attempt`. All callbacks are executed within the context of the object the result of `repeater` is called in.
+The bare `repeater` function takes a number of optional callbacks to encapsulate the a retryable process in one flat object, for a readable, declarative flow. The only required parameters below are `attempt`, the core code to be tried and retried, and `maxAttempts`, which determine the number of retries for `attempt`. All callbacks are executed within the context of the object the result of `repeater` is called in.
 
     var obj = {
         f: repeater({

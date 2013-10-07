@@ -9,6 +9,7 @@
 // - replace `context` variable in resumable? Could just be called
 //   using `call` 
 // - get rid of options object for `repeater.retry`?
+// - expose makePipeline
 
 
 (function (env) {
