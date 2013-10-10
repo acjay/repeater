@@ -16,7 +16,7 @@ describe('Repeater', function () {
 			state = {};
 			state.options = util.optionsMethodFactory({ 
 				before: 1, attempt: 1, validate: 1, beforeRetry: 1, onSuccess: 1, onError: 1, lastly: 1 
-			}, true);
+			});
 			state.asyncFunc = repeater(state.options);
 			state.shouldResolve = true;
 		});
@@ -38,7 +38,7 @@ describe('Repeater', function () {
 			state = {};
 			state.options = util.optionsMethodFactory({ 
 				before: 1, attempt: 2, validate: 1, beforeRetry: 1, onSuccess: 1, onError: 2, lastly: 1 
-			}, true);
+			});
 			state.asyncFunc = repeater(state.options);
 			state.shouldResolve = false;
 		});

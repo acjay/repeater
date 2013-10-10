@@ -4,6 +4,7 @@
 // - test for correct context in callbacks
 // - test that makePipeline is called with initial args
 // - test that makePipeline passes intermediate results
+// - test that makePipeline pass intial args to all intermediate functions
 //
 // Other TODOs:
 // - replace `context` variable in resumable? Could just be called
@@ -221,7 +222,7 @@
 	}
 
 	function callIfFunc(f) {
-		return typeof f === 'function' ? f.apply(this, Array.prototype.slice(arguments, 1)) : f;
+		return typeof f === 'function' ? f.apply(this, Array.prototype.slice.call(arguments, 1)) : f;
 	}
 
 	function makePipeline(ops) {
@@ -232,14 +233,15 @@
 		// subsequent functions
 		return function () {
 			var firstOp = true,
-				initialArgs = arguments;
+				initialArgs = Array.prototype.slice.call(arguments, 0);
 			return when.reduce(ops, function (prevResult, nextOp, index) {
 				if (nextOp) {
 					if (firstOp) {
 						firstOp = false;
 						return nextOp.apply(hostObj, initialArgs);
 					} else {
-						return nextOp.call(hostObj, prevResult);
+						// Send the intermediate result, plus initial args to subsequent functions
+						return nextOp.apply(hostObj, [prevResult].concat(Array.prototype.slice.call(initialArgs, 0)));
 					}	
 				} else {
 					return prevResult;
