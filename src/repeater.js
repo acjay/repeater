@@ -9,6 +9,8 @@
 // Other TODOs:
 // - replace `context` variable in resumable? Could just be called
 //   using `call` 
+// - give resumable variadic initial args?
+// - pass initial args to all functions in resumable?
 // - get rid of options object for `repeater.retry`?
 // - expose makePipeline
 
@@ -54,8 +56,8 @@
 
 			retrySeq = makePipeline.call(this, [attempt, validate]);
 			decoratedRetrySeq = env.repeater.retry.call(this, options.maxAttempts, retrySeq, options);
-			mainSeq = makePipeline.call(this, [before, decoratedRetrySeq]);
-			return mainSeq.apply(this, arguments).then(onSuccess, onError).ensure(lastly);
+			mainSeq = makePipeline.call(this, [before, decoratedRetrySeq, onSuccess]);
+			return mainSeq.apply(this, arguments).otherwise(onError).ensure(lastly);
 		}
 	}
 
