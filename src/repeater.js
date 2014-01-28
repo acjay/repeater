@@ -1,20 +1,3 @@
-// Testing TODOs:
-// - test extensively for missing optional parameters
-// - test resumable without initial arg
-// - test for correct context in callbacks
-// - test that makePipeline is called with initial args
-// - test that makePipeline passes intermediate results
-// - test that makePipeline pass intial args to all intermediate functions
-//
-// Other TODOs:
-// - replace `context` variable in resumable? Could just be called
-//   using `call` 
-// - give resumable variadic initial args?
-// - pass initial args to all functions in resumable?
-// - get rid of options object for `repeater.retry`?
-// - expose makePipeline
-
-
 (function (env) {
 	'use strict';
 
