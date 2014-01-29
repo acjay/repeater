@@ -180,7 +180,7 @@
 	env.repeater.timeout = function (ms, func) {
 		return function () {
 			var effectiveMs = callIfFunc.call(this, ms),
-				promisedResult = when(func.call(this, arguments)),
+				promisedResult = when(func.apply(this, arguments)),
 				timebomb = {
 						name: env.repeater.timeout.errorName,
 						message: effectiveMs + 'ms elapsed without a result',

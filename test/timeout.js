@@ -4,14 +4,16 @@ var repeater = this.repeater || require('../src/repeater'),
 	expect = this.expect || require('../node_modules/expect.js/expect.js');
 
 describe('Timeout', function () {
-	it('should call its callback', function (done) {
+	it('should call its callback with the provided arguments', function (done) {
 		var maxTime = 1000,
 			flag = false,
-			quickFunc = function () { flag = true; },
+			arg1Val = {},
+			arg2Val = {},
+			quickFunc = function (arg1, arg2) { flag = arg2; },
 			timeout = repeater.timeout(maxTime, quickFunc);
 
-		timeout().then(function () {
-			expect(flag);
+		timeout(arg1Val, arg2Val).then(function () {
+			expect(flag).to.be(arg2Val);
 			done();
 		}, function () {
 			throw 'timeout should not expire';
