@@ -1,3 +1,12 @@
+/* 
+ * repeater.js
+ * https://github.com/acjay/repeater
+ *
+ * Copyright (c) 2013-2014 Alan Johnson 
+ * Licensed under MIT license 
+ * https://github.com/acjay/repeater/blob/master/license.txt
+ */
+
 (function (env) {
 	'use strict';
 
