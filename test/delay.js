@@ -24,7 +24,7 @@ describe('Delay', function () {
 			delayed = repeater.delay(delay, callback);
 
 		delayed.then(function () {
-			expect.fail('delay promise should not be resolved');
+			throw 'delay promise should not be resolved';
 		}, function () {
 			done();
 		}).then(null, done);

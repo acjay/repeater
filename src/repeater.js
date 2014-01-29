@@ -155,6 +155,41 @@
 	};
 
 	/**
+	  * Decorator to attach a timeout to an asynchronous function. If the
+	  * timeout expires before the function resolves, the resulting promise
+	  * will be rejected with an exception with 'Timeout Exception'. This name
+	  * is also available as `repeater.timeout.errorName`. If the function
+	  * succeeds before the timeout, it passes through the result of the
+	  * function.
+	  *
+	  * @param ms the number of milliseconds before rejecting the promise. If
+	  *		passed as a function, it will be evaluated in the context the
+	  *		decorated function is called within.
+	  * @param func the function to decorate
+	  * @return the decorated version of `func`
+	  */
+	env.repeater.timeout = function (ms, func) {
+		return function () {
+			var effectiveMs = callIfFunc.call(this, ms),
+				promisedResult = when(func.call(this, arguments)),
+				timebomb = {
+						name: env.repeater.timeout.errorName,
+						message: effectiveMs + 'ms elapsed without a result',
+						toString: function () { return this.name + ': ' + this.message; }
+				},
+				countdown = env.repeater.delay(effectiveMs, function () {
+					return timebomb;
+				});
+
+			return when.promise(function (resolve, reject) {
+				countdown.then(function () { reject(timebomb); });
+				promisedResult.then(resolve, reject);
+			});
+		};
+	};
+	env.repeater.timeout.errorName = 'Timeout Exception';
+
+	/**
 	  * Creates a resumable chain of possibly asynchronous functions. When the 
 	  * result is called, the functions are executed in order, with 
 	  * intermediate results passed down the line. If one of the functions 
