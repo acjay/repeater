@@ -23,7 +23,7 @@ describe('Timeout', function () {
 	it('should reject if the timer expires', function (done) {
 		var successDelay = 1500,
 			maxTime = 5,
-			longFunc = function () { return repeater.delay(successDelay, function () {}); },
+			longFunc = function () { return repeater.delay(successDelay); },
 			timeout = repeater.timeout(maxTime, longFunc);
 
 		timeout().then(function () {
@@ -38,10 +38,10 @@ describe('Timeout', function () {
 		var successDelay = 5,
 			maxTime = 1000,
 			successVal = {},
-			failingFunc = function () {
-				return repeater.delay(successDelay, function () { return successVal; });
+			successfulFunc = function () {
+				return repeater.delay(successDelay).yield(successVal);
 			},
-			timeout = repeater.timeout(maxTime, failingFunc);
+			timeout = repeater.timeout(maxTime, successfulFunc);
 
 		timeout().then(function (val) {
 			expect(val).to.be(successVal);
@@ -64,7 +64,7 @@ describe('Timeout', function () {
 			maxTime = 1000,
 			errVal = {},
 			failingFunc = function () {
-				return repeater.delay(failDelay, function () { throw errVal; });
+				return repeater.delay(failDelay).then(function () { throw errVal; });
 			},
 			timeout = repeater.timeout(maxTime, failingFunc);
 

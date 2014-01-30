@@ -139,28 +139,15 @@
 	};
 
 	/**
-	  * Promise compliant delay function. Can be wrapped in a function and used 
-	  * as a beforeRetry callback to space out attempts of a 
-	  * retry-wrapped task.
+	  * Promise compliant delay function. Can be wrapped in a function and used
+	  * as a beforeRetry callback to space out attempts of a retry-wrapped 
+	  * task.
 	  * 
 	  * @param ms the number of milliseconds to delay
-	  * @param an optional function to call after the delay
 	  * @return a promise that is resolved after a delay
 	  */
-	env.repeater.delay = function (ms, func) {
-		return when.promise(function (resolve, reject) {
-			setTimeout(function () {
-				if (typeof func === 'function') {
-					try {
-						when(func.apply(null)).then(resolve, reject);	
-					} catch (err) {
-						reject(err);
-					}
-				} else {
-					resolve();
-				}
-			}, ms);
-		});
+	env.repeater.delay = function (ms) {
+		return when.promise(function (resolve) { setTimeout(resolve, ms); });
 	};
 
 	/**
@@ -186,9 +173,7 @@
 						message: effectiveMs + 'ms elapsed without a result',
 						toString: function () { return this.name + ': ' + this.message; }
 				},
-				countdown = env.repeater.delay(effectiveMs, function () {
-					return timebomb;
-				});
+				countdown = env.repeater.delay(effectiveMs).yield(timebomb);
 
 			return when.promise(function (resolve, reject) {
 				countdown.then(function () { reject(timebomb); });

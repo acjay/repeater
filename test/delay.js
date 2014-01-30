@@ -4,29 +4,22 @@ var repeater = this.repeater || require('../src/repeater'),
 	expect = this.expect || require('../node_modules/expect.js/expect.js');
 
 describe('Delay', function () {
-	var delay = 5;
+	var delay = 15;
 
-	it('should call its callback', function (done) {
+	it('should resolve after delay', function (done) {
 		var flag = false,
-			callback = function (arg) { flag = true; }, 
-			delayed = repeater.delay(delay, callback);
+			startTime = (new Date).getTime(),
+			delayed = repeater.delay(delay);
 
 		delayed.then(function () {
-			expect(flag);
+			expect((new Date).getTime()).to.be.above(startTime + delay);
+			// Assuming the delay shouldn't be more than twice what is 
+			// specified. This is implementation-dependent though, so may have
+			// to remove.
+			expect((new Date).getTime()).to.be.below(startTime + delay * 2);
 			done();
 		}, function () {
 			expect.fail('delay promise should not be rejected');
-		}).then(null, done);
-	});
-
-	it('should be rejected if its callback rejects', function (done) {
-		var callback = function (arg) { throw {}; },
-			delayed = repeater.delay(delay, callback);
-
-		delayed.then(function () {
-			throw 'delay promise should not be resolved';
-		}, function () {
-			done();
 		}).then(null, done);
 	});
 });
