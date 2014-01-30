@@ -158,6 +158,13 @@
 	  * succeeds before the timeout, it passes through the result of the
 	  * function.
 	  *
+	  * If `func` returns a non-promise value, it will be returned directly,
+	  * without any timeout countdown. This is because there would be no way
+	  * for the timeout to preempt the result, anyway. If `func` throws an
+	  * exception synchronously, so will the decorated version. Each of these
+	  * behaviors insure that the decorated version acts the same as the
+	  * oringal, whenver possible. 
+	  *
 	  * @param ms the number of milliseconds before rejecting the promise. If
 	  *		passed as a function, it will be evaluated in the context the
 	  *		decorated function is called within.
@@ -166,19 +173,26 @@
 	  */
 	env.repeater.timeout = function (ms, func) {
 		return function () {
-			var effectiveMs = callIfFunc.call(this, ms),
-				promisedResult = when(func.apply(this, arguments)),
-				timebomb = {
-						name: env.repeater.timeout.errorName,
-						message: effectiveMs + 'ms elapsed without a result',
-						toString: function () { return this.name + ': ' + this.message; }
-				},
-				countdown = env.repeater.delay(effectiveMs).yield(timebomb);
+			var hostObj = this,
+				promisedResult = when(func.apply(this, arguments));
 
-			return when.promise(function (resolve, reject) {
-				countdown.then(function () { reject(timebomb); });
-				promisedResult.then(resolve, reject);
-			});
+			if (when.isPromiseLike(promisedResult)) {
+				return when.promise(function (resolve, reject) {
+					var effectiveMs = callIfFunc.call(hostObj, ms),
+						timebomb = {
+								name: env.repeater.timeout.errorName,
+								message: effectiveMs + 'ms elapsed without a result',
+								toString: function () { return this.name + ': ' + this.message; }
+						};
+
+					// Setup a race between the countdown and the function 
+					env.repeater.delay(effectiveMs).then(function () { reject(timebomb); });
+					promisedResult.then(resolve, reject);
+				});	
+			} else {
+				return promisedResult;
+			}
+			
 		};
 	};
 	env.repeater.timeout.errorName = 'Timeout Exception';
