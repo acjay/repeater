@@ -63,8 +63,9 @@
 	  * result.
 	  *
 	  * @param maxAttempts the maximum number of times to try func. Can be a 
-	  *     function or method on the same object, but it will only be called
-	  *     once per call of the decorated function.
+	  *     function taking the host object as an argument (like lodash's
+	  * 	`_.property`, or method on the host object, but it will be called
+	  *		once per call of the decorated function.
 	  * @param func the function to try
 	  * @param options object containing optional parameters:
 	  *     {
@@ -91,7 +92,7 @@
 				chain = null,
 				errorLog = [], 
 				succeeded = false,
-				tries = callIfFunc.call(hostObj, maxAttempts),
+				tries = callIfFunc.call(hostObj, maxAttempts, hostObj),
 				tryNumber = null;
 
 			// Make the first attempt
@@ -163,11 +164,13 @@
 	  * for the timeout to preempt the result, anyway. If `func` throws an
 	  * exception synchronously, so will the decorated version. Each of these
 	  * behaviors insure that the decorated version acts the same as the
-	  * oringal, whenver possible. 
+	  * original, whenver possible.
 	  *
 	  * @param ms the number of milliseconds before rejecting the promise. If
 	  *		passed as a function, it will be evaluated in the context the
-	  *		decorated function is called within.
+	  *		decorated function is called within, and the context will also be
+	  *		passed as the first argument (for use with lodash's `_.property`,
+	  *		for instance.
 	  * @param func the function to decorate
 	  * @return the decorated version of `func`
 	  */
@@ -178,21 +181,20 @@
 
 			if (when.isPromiseLike(promisedResult)) {
 				return when.promise(function (resolve, reject) {
-					var effectiveMs = callIfFunc.call(hostObj, ms),
+					var effectiveMs = callIfFunc.call(hostObj, ms, hostObj),
 						timebomb = {
 								name: env.repeater.timeout.errorName,
 								message: effectiveMs + 'ms elapsed without a result',
 								toString: function () { return this.name + ': ' + this.message; }
 						};
 
-					// Setup a race between the countdown and the function 
+					// Setup a race between the countdown and the function
 					env.repeater.delay(effectiveMs).then(function () { reject(timebomb); });
 					promisedResult.then(resolve, reject);
-				});	
+				});
 			} else {
 				return promisedResult;
 			}
-			
 		};
 	};
 	env.repeater.timeout.errorName = 'Timeout Exception';
