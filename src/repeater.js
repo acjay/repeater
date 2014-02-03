@@ -246,6 +246,24 @@
 		};
 	};
 
+	/**
+	  * Pick a property off of the context with which `repeater.prop` is
+	  * called.
+	  *
+	  * This is primarily useful for run-time configuration of combinator
+	  * options, e.g. configuring the `maxAttempts` argument of 
+	  * `repeater.retry` with a property or method result on the same object
+	  * from which the decorated method is called.
+	  *
+	  * @param propName the property to return off of the context
+	  * @return a function that gets the a property of its context
+	  */
+	env.repeater.prop = function (propName) {
+		return function () {
+			return this[propName];
+		}
+	}
+
 	function funcOrNull(f) {
 		var _this = this;
 		return typeof f === 'function' ? function () { return f.apply(_this, arguments); } : null;
