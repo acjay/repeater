@@ -92,7 +92,7 @@
 				chain = null,
 				errorLog = [], 
 				succeeded = false,
-				tries = callIfFunc.call(hostObj, maxAttempts, hostObj),
+				tries = env.repeater.resolve.call(hostObj, maxAttempts),
 				tryNumber = null;
 
 			// Make the first attempt
@@ -181,11 +181,11 @@
 
 			if (when.isPromiseLike(promisedResult)) {
 				return when.promise(function (resolve, reject) {
-					var effectiveMs = callIfFunc.call(hostObj, ms, hostObj),
+					var effectiveMs = env.repeater.resolve.call(hostObj, ms),
 						timebomb = {
 								name: env.repeater.timeout.errorName,
 								message: effectiveMs + 'ms elapsed without a result',
-								toString: function () { return this.name + ': ' + this.message; }
+								toString: function () { return timebomb.name + ': ' + timebomb.message; }
 						};
 
 					// Setup a race between the countdown and the function
@@ -264,13 +264,21 @@
 		}
 	}
 
+	/**
+	  * Calls its argument if that argument is a function, otherwise returns
+	  * the argument. This is done recursively until an non-function is
+	  * encountered.
+	  *
+	  *	@param funcOrVal the possible function to resolve
+	  * @return the eventual value of recursively calling the results
+	  */
+	env.repeater.resolve = function (funcOrVal) {
+		return typeof funcOrVal === 'function' ? env.repeater.resolve(funcOrVal.call(this)) : funcOrVal;
+	}
+
 	function funcOrNull(f) {
 		var _this = this;
 		return typeof f === 'function' ? function () { return f.apply(_this, arguments); } : null;
-	}
-
-	function callIfFunc(f) {
-		return typeof f === 'function' ? f.apply(this, Array.prototype.slice.call(arguments, 1)) : f;
 	}
 
 	function makePipeline(ops) {
