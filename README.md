@@ -1,7 +1,7 @@
 repeater
 ========
 
-Repeater is a combinator library for error recovery, building off of the [when.js](https://github.com/cujojs/when) library for promises. The overall goal is to provide an engine for running sequences of asynchronous tasks, retrying them automatically when they fail, and resuming failed processes without repeating successful work. Ideally, the result is more modular and declarative code, fewer explicit promises.
+Repeater is a utility library for asynchronous Javascript, building off of the [when.js](https://github.com/cujojs/when) library for promises. The overall goal is to provide an engine for running sequences of asynchronous tasks, retrying them automatically when they fail, and resuming failed processes without repeating successful work. Ideally, the result is more modular and declarative code, fewer explicit promises.
 
 repeater
 --------
