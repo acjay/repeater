@@ -4,15 +4,30 @@ var repeater = this.repeater || require('../src/repeater'),
 	expect = this.expect || require('../node_modules/expect.js/expect.js');
 
 describe('Timeout', function () {
+	it('should pass the return value of a synchronous function directly', function () {
+		var maxTime = 1000,
+			returnVal = {},
+			syncFunc = function () { return returnVal },
+			timeout = repeater.timeout(maxTime, syncFunc),
+			timeoutResult = timeout();
+
+		expect(when.isPromiseLike(timeoutResult)).to.be(false);
+		expect(timeoutResult).to.be(returnVal);
+	});
+
 	it('should call its callback with the provided arguments', function (done) {
 		var maxTime = 1000,
-			flag = false,
+			flag = null,
 			arg1Val = {},
 			arg2Val = {},
-			quickFunc = function (arg1, arg2) { flag = arg2; },
+			quickFunc = function (arg1, arg2) { 
+				flag = arg2;
+				return when(arg1Val);
+			},
 			timeout = repeater.timeout(maxTime, quickFunc);
 
-		timeout(arg1Val, arg2Val).then(function () {
+		timeout(arg1Val, arg2Val).then(function (val) {
+			expect(val).to.be(arg1Val);
 			expect(flag).to.be(arg2Val);
 			done();
 		}, function () {

@@ -177,7 +177,7 @@
 	env.repeater.timeout = function (ms, func) {
 		return function () {
 			var hostObj = this,
-				promisedResult = when(func.apply(this, arguments));
+				promisedResult = func.apply(this, arguments);
 
 			if (when.isPromiseLike(promisedResult)) {
 				return when.promise(function (resolve, reject) {
@@ -189,8 +189,13 @@
 						};
 
 					// Setup a race between the countdown and the function
-					env.repeater.delay(effectiveMs).then(function () { reject(timebomb); });
-					promisedResult.then(resolve, reject);
+					env.repeater.delay(effectiveMs).then(function () {
+						// If the promise has an abort method (like a jQuery 
+						// jqxhr object), call it to cancel to operation. 
+						env.repeater.resolve(promisedResult.abort);
+						reject(timebomb); 
+					});
+					when(promisedResult, resolve, reject);
 				});
 			} else {
 				return promisedResult;
