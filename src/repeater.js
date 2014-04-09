@@ -174,7 +174,7 @@
 	  * @param func the function to decorate
 	  * @return the decorated version of `func`
 	  */
-	env.repeater.timeout = function (ms, func) {
+	env.repeater.timeout = function (ms, func, abortOnTimeout) {
 		return function () {
 			var hostObj = this,
 				promisedResult = func.apply(this, arguments);
@@ -192,7 +192,9 @@
 					env.repeater.delay(effectiveMs).then(function () {
 						// If the promise has an abort method (like a jQuery 
 						// jqxhr object), call it to cancel to operation. 
-						env.repeater.resolve(promisedResult.abort);
+						if (abortOnTimeout) {
+							env.repeater.resolve(promisedResult.abort);
+						}
 						reject(timebomb); 
 					});
 					when(promisedResult, resolve, reject);
